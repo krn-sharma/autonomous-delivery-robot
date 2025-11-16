@@ -1,0 +1,94 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project specific
+# Generated maps
+robot-code/maps/*.png
+!robot-code/maps/.gitkeep
+
+# Recordings (large data files)
+robot-code/recordings/
+*.pkl
+*.pickle
+
+# Temporary images
+robot-code/notebooks/*.jpg
+robot-code/notebooks/*.png
+!robot-code/notebooks/SLAM_robot_map.png
+!robot-code/notebooks/spring_mass_system.png
+!robot-code/notebooks/tasks.png
+
+# Test outputs
+robot-code/grid/*.png
+
+# Camera calibration (keep the yml file)
+# robot-code/camera_intrinsics.yml  # Uncomment if you want to exclude
+
+# Log files
+*.log
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Environment variables
+.env
+.env.local
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Internal documentation (not for GitHub)
+CLEANUP_SUMMARY.md
+PROJECT_REVIVAL_SUMMARY.md
+readme.md
+

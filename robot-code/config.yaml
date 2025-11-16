@@ -1,0 +1,29 @@
+robot:
+  wheel_radius: 0.027216 # radius of the large wheels in meters
+  width:  0.11 # measure the wheel-to-wheel width of your robot and put it here. It is also in meters (so 0.2 = 20cm)
+  delta_t: 0.1 # in seconds
+
+main:
+  grid_resolution: 0.01  # Grid resolution in meters
+  grid_width: 4.0       # Grid width in meters
+  grid_height: 4.0      # Grid height in meters
+
+camera:
+  y_offset: 0 # where is the camera in relation to the robot's centre
+  z_offset: 0 # where is the camera in relation to the robot's centre
+  y_angle: 0 # in radians. 0 would mean that the robot is looking straight up, 90° means that the camera is pointing forward parallel to the floor.
+  exposure_time: 60
+  gain: 100
+
+ekf_slam:
+  robot_width: 0.11 # measure the wheel-to-wheel width of your robot and put it here. It is also in meters (so 0.2 = 20cm)
+  motor_std: 4 # std = standard deviation. You might need to adjust these values depending on your motors, robot construction etc.
+  dist_std: 0.1 # std = standard deviation. You might need to adjust these values depending on your motors, robot construction etc.
+  angle_std: 4 # std = standard deviation. You might need to adjust these values depending on your motors, robot construction etc.
+
+exploration:
+  speed_lost: 10
+  speed_cruise: 15
+  amount_of_blocks: 4
+  max_marker_gap: 0.5
+  min_border_markers: 3
