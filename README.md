@@ -1,14 +1,20 @@
 # Autonomous Robot Navigation System with EKF-SLAM
 
+## Video
+
+[▶️ Watch Video](media/demo.mp4)
+
+*Watch the robot autonomously explore the environment, detect blocks, and deliver them to matching colored gates.*
+
+---
+
 ## Table of Contents
 1. [Project Overview](#project-overview)
 2. [System Architecture](#system-architecture)
 3. [Hardware Components](#hardware-components)
 4. [Software Pipeline](#software-pipeline)
 5. [Installation & Setup](#installation--setup)
-6. [Usage](#usage)
-7. [Technical Details](#technical-details)
-8. [Future Improvements](#future-improvements)
+
 
 ---
 
@@ -398,75 +404,6 @@ drop_location = gate_center + offset·perpendicular
 # Align robot perpendicular to gate before releasing
 ```
 
-### 7. Exploration Strategy
-
-The robot uses a frontier-based exploration approach:
-
-#### Exploration State Machine
-
-```
-Initial Rotation (30s)
-    ↓
-Identify Furthest Unvisited Marker
-    ↓
-Plan Path (A*)
-    ↓
-Follow Path
-    ↓
-[New markers detected?] → Replan if obstacles detected
-    ↓
-[Block detected?] → Switch to Block Delivery Mode
-    ↓
-[Sufficient exploration?] → Manual Mode
-```
-
-#### Marker Selection Heuristic
-
-```python
-def get_furthest_marker(robot_pos):
-    max_distance = 0
-    target = None
-    
-    for marker in [obstacles, boundaries]:
-        # Ignore isolated markers (spacing > 2m)
-        if nearest_neighbor_distance(marker) > 2.0:
-            continue
-        
-        # Ignore very close markers (< 30cm)
-        distance = ||marker - robot_pos||
-        if distance < 0.3:
-            continue
-            
-        if distance > max_distance:
-            max_distance = distance
-            target = marker
-    
-    return target
-```
-
-#### Block Detection
-
-Blocks are identified by ArUco marker pairs:
-```python
-# Red blocks: markers 421-450 (odd-even pairs)
-# Blue blocks: markers 521-550 (odd-even pairs)
-
-if marker_n AND marker_(n+1) both visible:
-    block_position = marker_(n+1) + 0.1m·direction
-    register_block(block_position, color)
-else:
-    track_as_potential_block(marker_n)
-```
-
-#### Path Recalculation
-
-The robot recalculates paths when:
-1. New obstacles detected near current path (< 1m)
-2. New blocks detected near path (< 0.5m)
-3. Robot stuck (no progress for > 30s)
-
-Cooldown period: 0.5s between recalculations to avoid thrashing.
-
 ### 8. Block Manipulation
 
 #### Pickup Sequence
@@ -535,88 +472,6 @@ pip install numpy imagezmq jsonpickle
 pip install PyQt5 imutils Pillow
 ```
 
-### Configuration
-
-#### 1. Camera Calibration
-
-If using a different camera, recalibrate:
-```bash
-# Use OpenCV calibration tool with checkerboard pattern
-# Update camera_intrinsics.yml with new parameters
-```
-
-#### 2. Robot Configuration
-
-Edit `robot-code/config.yaml`:
-
-```yaml
-robot:
-  wheel_radius: 0.027216  # Measure your wheels (meters)
-  width: 0.11             # Wheel-to-wheel distance (meters)
-  delta_t: 0.1            # Control loop period (seconds)
-
-camera:
-  y_offset: 0             # Camera offset from robot center
-  z_offset: 0             # Camera height
-  y_angle: 0              # Camera tilt angle (radians)
-  exposure_time: 60       # 1-5000
-  gain: 100               # 0-100
-
-ekf_slam:
-  motor_std: 4            # Motor noise (degrees)
-  dist_std: 0.1           # Distance measurement noise (meters)
-  angle_std: 4            # Angle measurement noise (degrees)
-
-main:
-  grid_resolution: 0.01   # Grid cell size (meters)
-  grid_width: 4.0         # Map width (meters)
-  grid_height: 4.0        # Map height (meters)
-
-exploration:
-  speed_lost: 10          # Speed when lost
-  speed_cruise: 15        # Normal exploration speed
-  amount_of_blocks: 4     # Number of blocks to deliver
-```
-
-#### 3. Network Setup (for viewer)
-
-**On EV3**, find IP address:
-```bash
-hostname -I
-```
-
-**On PC**, edit `subscriber.py`:
-```python
-self.image_hub = imagezmq.ImageHub(
-    open_port='tcp://YOUR_EV3_IP:5555', 
-    REQ_REP=False
-)
-```
-
----
-
-## Usage
-
-### Running the Robot
-
-#### 1. Start the Viewer (on PC)
-```bash
-cd /path/to/robot
-python viewer.py
-```
-
-#### 2. Deploy Code to EV3
-```bash
-scp -r robot-code/ robot@YOUR_EV3_IP:~/
-```
-
-#### 3. Run on EV3
-```bash
-ssh robot@YOUR_EV3_IP
-cd robot-code/
-python main.py
-```
-
 ### Operating Modes
 
 The robot supports multiple modes, switchable via keyboard:
@@ -627,251 +482,19 @@ The robot supports multiple modes, switchable via keyboard:
 | `e` | **Exploration** | Autonomous environment mapping |
 | `t` | **Thinking** | Path planning mode |
 | `p` | **PathFollower** | Follow computed path |
-| `r` | **Race** | High-speed mode (reduced SLAM updates) |
 | `l` | **Load** | Load saved map |
 | `o` | **Open Gripper** | Manual gripper control |
 | `c` | **Close Gripper** | Manual gripper control |
 | `q` | **Quit** | Stop program |
 
-#### Manual Control (Mode: `m`)
-- `w`: Forward
-- `s`: Backward  
-- `a`: Turn left
-- `d`: Turn right
-- `c`: Stop
-
-#### Autonomous Operation
-
-**Typical sequence:**
-1. Press `e` to start exploration
-2. Robot rotates for 30s to scan environment
-3. Robot explores, building map and detecting blocks/gates
-4. When block + matching gate found → automatic delivery
-5. Returns to exploration after delivery
-6. Continues until all blocks delivered or exploration complete
-
-### Monitoring & Debugging
-
-#### Viewer Display
-
-The viewer shows:
-- Live camera feed with detected markers
-- Robot position and heading (green triangle)
-- Landmark positions with uncertainty ellipses
-- Detected vs. estimated landmark positions
-- Grid map overlay
-- Current path (if active)
-
-#### Console Output
-
-The robot prints status information:
-```
-[green]Found red gate and blocks - Switching to Thinking mode
-[green]Thinking path to red Block with ID-422
-[green]Path Found
-[green]Following path to 422
-[green]Destination Arrived
-```
-
-#### Performance Metrics
-
-Monitor timing in console:
-```
-cam fps: 28
-[red]Warning! dt = 0.15  # Control loop exceeded 0.1s
-[red]EKF_SLAM correction time: 0.12  # SLAM update took too long
-```
-
-### Saving Maps
-
-Maps are automatically saved during exploration:
-```
-robot-code/maps/map.png
-```
-
-The map visualization includes:
-- Boundary markers (green)
-- Obstacle markers (orange)
-- Red/blue gates (red/blue stars)
-- Detected blocks (red/blue circles)
-- Block markers with IDs
-- Robot position (green triangle)
-- Current path (green dashed line)
-
----
-
-## Technical Details
-
-### Performance Characteristics
-
-| Metric | Value |
-|--------|-------|
-| Camera Frame Rate | 30 FPS |
-| Control Loop Frequency | 10 Hz (0.1s period) |
-| ArUco Detection Latency | ~20-30ms |
-| EKF Prediction Time | <10ms (typical) |
-| EKF Correction Time | ~10-20ms per landmark |
-| A* Planning Time | ~100-500ms (depends on map size) |
-| Localization Accuracy | ±5cm (under good conditions) |
-| Heading Accuracy | ±3° (under good conditions) |
-
-### Coordinate Systems
-
-**World Frame** (Right-handed):
-- Origin: Center of environment
-- +X: Right
-- +Y: Forward  
-- +θ: Counter-clockwise from +X axis
-
-**Robot Frame**:
-- Origin: Between wheels
-- +X: Forward
-- +Y: Left
-- +θ: Counter-clockwise
-
-**Camera Frame**:
-- Origin: Camera optical center
-- +Z: Looking direction
-- +X: Right in image
-- +Y: Down in image
-
-### Error Sources & Mitigation
-
-**Wheel Slippage**:
-- Impact: Odometry drift
-- Mitigation: EKF fuses odometry with visual landmarks
-
-**Marker Detection Failures**:
-- Impact: Missing measurements
-- Mitigation: Minimum sighting threshold, tracking of potential blocks
-
-**Lighting Variations**:
-- Impact: Detection reliability
-- Mitigation: Configurable exposure/gain, histogram equalization
-
-**Map Ambiguity**:
-- Impact: Path planning through unknown areas
-- Mitigation: Safety margins, conservative cost function
-
-### Computational Complexity
-
-**EKF-SLAM**:
-- State dimension: 3 + 2n (n landmarks)
-- Prediction: O(n²) - full covariance matrix
-- Correction: O(n) per landmark
-- Memory: O(n²) for covariance matrix
-
-**A\* Path Planning**:
-- Worst case: O(b^d) where b=branching factor (8), d=depth
-- Typical: O(n log n) with good heuristic
-- Memory: O(n) for open set
-
-**Exploration**:
-- Marker selection: O(m) where m = number of markers
-- Path recalculation: Triggered by events, not continuous
-
-### Failure Modes & Recovery
-
-**Robot Lost** (no landmarks visible):
-- Action: Rotate in place to scan for markers
-- Timeout: 30s, then switch to manual mode
-
-**Path Planning Failure** (no path found):
-- Action: Rotate 10° and retry
-- Attempts: 36 (full rotation)
-- Fallback: Manual mode
-
-**Block Lost During Approach**:
-- Action: Mark as potential block, continue exploration
-- Retry: If both markers redetected
-
-**Gripper Failure**:
-- Detection: Block markers still visible after pickup
-- Action: Continue (no automatic retry)
-
----
-
-## Future Improvements
-
-### Algorithmic Enhancements
-
-1. **FastSLAM 2.0**: Particle filter approach for improved scalability
-2. **Loop Closure Detection**: Recognize previously visited areas to correct drift
-3. **Multi-hypothesis Tracking**: Handle ambiguous data associations
-4. **Dynamic Replanning**: Real-time path adjustment during execution
-5. **Semantic Mapping**: Classify regions (boundaries, gates, block zones)
-
-### Perception Upgrades
-
-1. **Deep Learning**: CNN-based block detection without markers
-2. **Sensor Fusion**: IMU integration for improved odometry
-3. **3D Mapping**: Depth camera for obstacle height estimation
-4. **Lighting Robustness**: Automatic exposure control based on histogram
-5. **Multi-Camera**: 360° vision coverage
-
-### Control Improvements
-
-1. **Model Predictive Control (MPC)**: Optimal trajectory tracking
-2. **Adaptive PID**: Auto-tune parameters based on performance
-3. **Differential Flatness**: Smooth trajectory generation
-4. **Torque Control**: Direct motor current control for precision
-
-### System Architecture
-
-1. **ROS2 Integration**: Standard robotics middleware
-2. **Behavior Trees**: Hierarchical task decomposition
-3. **Distributed Computing**: Offload SLAM to more powerful PC
-4. **State Persistence**: Save/resume missions across power cycles
-5. **Multi-Robot Collaboration**: Cooperative exploration and delivery
-
-### Software Engineering
-
-1. **Unit Tests**: Coverage for all algorithms (pytest framework)
-2. **Simulation**: Gazebo/Webots integration for virtual testing
-3. **CI/CD Pipeline**: Automated testing and deployment
-4. **Documentation**: Sphinx-generated API docs
-5. **Profiling**: Identify performance bottlenecks (cProfile)
-
----
-
-## References
-
-### Academic Papers
-- Thrun, S., Burgard, W., & Fox, D. (2005). *Probabilistic Robotics*. MIT Press.
-- Durrant-Whyte, H., & Bailey, T. (2006). "Simultaneous Localization and Mapping: Part I." *IEEE Robotics & Automation Magazine*, 13(2), 99-110.
-- Hart, P. E., Nilsson, N. J., & Raphael, B. (1968). "A Formal Basis for the Heuristic Determination of Minimum Cost Paths." *IEEE Transactions on Systems Science and Cybernetics*, 4(2), 100-107.
-
-### Libraries & Tools
-- OpenCV: https://opencv.org/
-- ArUco Markers: https://docs.opencv.org/4.x/d5/dae/tutorial_aruco_detection.html
-- ev3dev: https://www.ev3dev.org/
-- ZMQ: https://zeromq.org/
-
-### Hardware
-- LEGO Mindstorms EV3: https://www.lego.com/en-us/themes/mindstorms
-- Camera Calibration: https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html
-
----
 
 ## License
 
-This project is for educational purposes. Feel free to use and modify with attribution.
-
+This project is for educational purposes.
 ---
 
 ## Acknowledgments
 
-Developed as part of a robotics course project. Special thanks to the ev3dev community and OpenCV contributors.
-
+Developed as part of a robotics course project offered from department of Computational Neuroscience @ Uni Gö
 ---
-
-## Contact
-
-For questions or collaboration:
-- GitHub: [Your GitHub Profile]
-- Email: [Your Email]
-
----
-
-*Last Updated: November 2024*
 
