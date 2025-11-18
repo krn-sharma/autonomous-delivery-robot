@@ -2,7 +2,14 @@
 
 ## Video
 
-[▶️ Watch Video](media/demo.mp4)
+<!-- For GitHub Pages: Use HTML video tag (works in .md files) -->
+<video width="100%" controls>
+  <source src="media/demo.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+<!-- Alternative: Simple link (works everywhere) -->
+<!-- [▶️ Watch Video](media/demo.mp4) -->
 
 *Watch the robot autonomously explore the environment, detect blocks, and deliver them to matching colored gates.*
 
